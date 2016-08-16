@@ -374,7 +374,9 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
 
     protected void doDropFlow(IOFSwitch sw, OFPacketIn pi, IRoutingDecision decision, FloodlightContext cntx) {
         OFPort inPort = OFMessageUtils.getInPort(pi);
-        Match m = createMatchFromPacket(sw, inPort, cntx);
+        Match m = createMatchFromPacket(sw, inPort, 
+                pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
+                    pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
         OFFlowMod.Builder fmb = sw.getOFFactory().buildFlowAdd();
         List<OFAction> actions = new ArrayList<OFAction>(); // set no action to drop
         U64 flowSetId = flowSetIdRegistry.generateFlowSetId();
@@ -485,7 +487,10 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
                 dstAp.getNodeId(),
                 dstAp.getPortId());
 
-        Match m = createMatchFromPacket(sw, srcPort, cntx);
+	log.warn("VLAN from packet-in {}", pi.getMatch().get(MatchField.VLAN_VID));
+	Match m = createMatchFromPacket(sw, srcPort, 
+                pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
+                    pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
 
         if (path != null) {
             if (log.isDebugEnabled()) {
@@ -536,11 +541,11 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
      * @param cntx, the current context which contains the deserialized packet
      * @return a composed Match object based on the provided information
      */
-    protected Match createMatchFromPacket(IOFSwitch sw, OFPort inPort, FloodlightContext cntx) {
+    protected Match createMatchFromPacket(IOFSwitch sw, OFPort inPort, VlanVid v, FloodlightContext cntx) {
         // The packet in match will only contain the port number.
         // We need to add in specifics for the hosts we're routing between.
         Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
-        VlanVid vlan = VlanVid.ofVlan(eth.getVlanID());
+        VlanVid vlan = v == null ? VlanVid.ofVlan(eth.getVlanID()) :  v;
         MacAddress srcMac = eth.getSourceMACAddress();
         MacAddress dstMac = eth.getDestinationMACAddress();
 
