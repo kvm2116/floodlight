@@ -250,7 +250,7 @@
     </target>
     <target name="coverage" depends="instrument,test,coverage-report"/>
 
-    <target name="dist" depends="compile,compile-test">
+    <target name="dist" depends="compile">
         <xmlproperty file="pom.xml" prefix="pom"/>
         <echo message="Setting Floodlight version: ${pom.project.version}"/>
         <echo message="Setting Floodlight name: ${pom.project.name}"/>
