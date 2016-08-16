@@ -273,6 +273,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
                         outPort);
             } else {
                 messageDamper.write(sw, fmb.build());
+		messageDamper.write(sw, fmb.setTableId(TableId.of(200)).build());
             }
 
             /* Push the packet out the first hop switch */
