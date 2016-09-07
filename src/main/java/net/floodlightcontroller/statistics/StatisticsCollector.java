@@ -49,6 +49,29 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 	private static final HashMap<NodePortTuple, SwitchPortBandwidth> portStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
 	private static final HashMap<NodePortTuple, SwitchPortBandwidth> tentativePortStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
 
+	// TODO: define flowStats and tentativeFlowStats
+//	private static final HashMap<NodePortTuple, SwitchPortBandwidth> portStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
+//	private static final HashMap<NodePortTuple, SwitchPortBandwidth> tentativePortStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
+	/**
+	 * Run periodically to collect flow statistics from tableId = 200.
+	 * flowStats hashmap stores the flow tuple along with the number of bytes transferred 
+	 * in the previous time interval. 
+	 * tentativeFlowStats hashmap initializes a new flow tuple byte count. This is used by flowStats 
+	 * to measure the number of bytes transferred after the flow is noticed for the first 
+	 * time  
+	 * @author kunalmahajan
+	 *
+	 */
+	private class FlowStatsCollector implements Runnable {
+
+		@Override
+		public void run() {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	}
+	
 	/**
 	 * Run periodically to collect all port statistics. This only collects
 	 * bandwidth stats right now, but it could be expanded to record other
@@ -112,11 +135,11 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 							if (sw != null) { /* could have disconnected; we'll assume zero-speed then */
 								speed = sw.getPort(npt.getPortId()).getCurrSpeed();
 							}
-							long timeDifSec = (System.currentTimeMillis() - spb.getUpdateTime()) / MILLIS_PER_SEC;
+//							long timeDifSec = (System.currentTimeMillis() - spb.getUpdateTime()) / MILLIS_PER_SEC;
 							portStats.put(npt, SwitchPortBandwidth.of(npt.getNodeId(), npt.getPortId(), 
 									U64.ofRaw(speed),
-									U64.ofRaw((rxBytesCounted.getValue() * BITS_PER_BYTE) / timeDifSec), 
-									U64.ofRaw((txBytesCounted.getValue() * BITS_PER_BYTE) / timeDifSec), 
+									U64.ofRaw((rxBytesCounted.getValue() * BITS_PER_BYTE)), 
+									U64.ofRaw((txBytesCounted.getValue() * BITS_PER_BYTE)), 
 									pse.getRxBytes(), pse.getTxBytes())
 									);
 							
