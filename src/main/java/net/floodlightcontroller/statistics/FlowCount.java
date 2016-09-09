@@ -8,41 +8,33 @@ package net.floodlightcontroller.statistics;
 
 import java.util.Date;
 
-import org.projectfloodlight.openflow.protocol.match.Match;
 import org.projectfloodlight.openflow.types.DatapathId;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.OFPort;
+import org.projectfloodlight.openflow.types.TableId;
+import org.projectfloodlight.openflow.types.TransportPort;
 import org.projectfloodlight.openflow.types.U64;
 
 public class FlowCount {
 	private DatapathId id;
 	private OFPort pt;
-	private int tableId;
+	private TableId tableId;
 	private int priority;
-	private int idleTimeout;
-	private int hardTimeout;
-	private U64 packetSent;			// number of packets sent within last time interval
 	private U64 byteSent;			// number of bytes sent within last time interval
 	private Date time;
-	private U64 packetCount;		// total number of packets sent from start of time
 	private U64 byteCount;			// total number of bytes sent from start of time
 	private IPv4Address srcIp;		// flow source ip address
 	private IPv4Address destIp;		// flow destination ip address
-	private int srcPort;			// flow source port number
-	private int destPort;			// flow destination port number
+	private TransportPort srcPort;			// flow source port number
+	private TransportPort destPort;			// flow destination port number
 	
 	private FlowCount() {}
-	private FlowCount(DatapathId d, OFPort p, int tableId, int priority, int idleTimeout, int hardTimeout, U64 packetSent, U64 byteSent, U64 packetCount, U64 byteCount, IPv4Address srcIp, IPv4Address destIp, int srcPort, int destPort) {
+	private FlowCount(DatapathId d, OFPort p, TableId tableId, U64 byteSent, U64 byteCount, IPv4Address srcIp, IPv4Address destIp, TransportPort srcPort, TransportPort destPort) {
 		id = d;
 		pt = p;
 		this.tableId = tableId;
-		this.priority = priority;
-		this.idleTimeout = idleTimeout;
-		this.hardTimeout = hardTimeout;
-		this.packetCount = packetCount;
 		this.byteCount = byteCount;
 		time = new Date();
-		this.packetCount = packetCount;
 		this.byteCount = byteCount;
 		this.srcIp = srcIp;
 		this.destIp = destIp;
@@ -51,18 +43,15 @@ public class FlowCount {
 		
 	}
 	
-	public static FlowCount of(DatapathId d, OFPort p, int tableId, int priority, int idleTimeout, int hardTimeout, U64 packetSent, U64 byteSent, U64 packetCount, U64 byteCount, IPv4Address srcIp, IPv4Address destIp, int srcPort, int destPort) {
+	public static FlowCount of(DatapathId d, OFPort p, TableId tableId, U64 byteSent, U64 byteCount, IPv4Address srcIp, IPv4Address destIp, TransportPort srcPort, TransportPort destPort) {
 		if (d == null) {
 			throw new IllegalArgumentException("Datapath ID cannot be null");
 		}
 		if (p == null) {
 			throw new IllegalArgumentException("Port cannot be null");
 		}
-		if (tableId != 100 || tableId != 200) {
+		if (tableId.getValue() != 100 || tableId.getValue() != 200) {
 			throw new IllegalArgumentException("tableId has to be either 100 or 200");
-		}
-		if (priority < 0) {
-			throw new IllegalArgumentException("priority cannot be negative");
 		}
 		if (srcIp == null){
 			throw new IllegalArgumentException("Source IP address cannot be null");
@@ -70,13 +59,17 @@ public class FlowCount {
 		if (destIp == null){
 			throw new IllegalArgumentException("Destination IP address cannot be null");
 		}
-		if (srcPort < 0 || srcPort > 65535){
-			throw new IllegalArgumentException("Source port number should be between 0 and 65535");
+		if(srcPort == null){
+			throw new IllegalArgumentException("Source port cannot be null");
+		} else if (srcPort.getPort() < 0 || srcPort.getPort() > 65535){
+				throw new IllegalArgumentException("Source port number should be between 0 and 65535");
 		}
-		if (destPort < 0 || destPort > 65535){
-			throw new IllegalArgumentException("Destination port number should be between 0 and 65535");
+		if(destPort == null){
+			throw new IllegalArgumentException("Destination port cannot be null");
+		} else if (destPort.getPort() < 0 || destPort.getPort() > 65535){
+				throw new IllegalArgumentException("Destination port number should be between 0 and 65535");
 		}
-		return new FlowCount(d, p, tableId, priority, idleTimeout, hardTimeout, packetSent, byteSent, packetCount, byteCount, srcIp, destIp, srcPort, destPort);
+		return new FlowCount(d, p, tableId, byteSent, byteCount, srcIp, destIp, srcPort, destPort);
 	}
 	
 	public DatapathId getSwitchId() {
@@ -87,7 +80,7 @@ public class FlowCount {
 		return pt;
 	}
 	
-	public int getTableId() {
+	public TableId getTableId() {
 		return tableId;
 	}
 	
@@ -111,11 +104,11 @@ public class FlowCount {
 		return destIp;
 	}
 	
-	public int getSrcPort(){
+	public TransportPort getSrcPort(){
 		return srcPort;
 	}
 	
-	public int getDestPort(){
+	public TransportPort getDestPort(){
 		return destPort;
 	}
 	
@@ -130,10 +123,11 @@ public class FlowCount {
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
 		result = prime * result + ((srcIp == null) ? 0 : srcIp.hashCode());
 		result = prime * result + ((destIp == null) ? 0 : destIp.hashCode());
-		result = prime * result + srcPort;
-		result = prime * result + destPort;
+		result = prime * result + ((srcPort == null) ? 0 : srcPort.hashCode());
+		result = prime * result + ((destPort == null) ? 0 : destPort.hashCode());
 		return result;
 	}
+	
 	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)

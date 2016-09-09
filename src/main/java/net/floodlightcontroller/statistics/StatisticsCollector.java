@@ -13,9 +13,13 @@ import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.statistics.web.SwitchStatisticsWebRoutable;
 import net.floodlightcontroller.threadpool.IThreadPoolService;
 import org.projectfloodlight.openflow.protocol.*;
+import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.action.OFActionOutput;
 import org.projectfloodlight.openflow.protocol.match.Match;
+import org.projectfloodlight.openflow.protocol.match.MatchField;
 import org.projectfloodlight.openflow.protocol.ver13.OFMeterSerializerVer13;
 import org.projectfloodlight.openflow.types.DatapathId;
+import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TableId;
 import org.projectfloodlight.openflow.types.U64;
@@ -46,12 +50,14 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 	private static final String INTERVAL_PORT_STATS_STR = "collectionIntervalPortStatsSeconds";
 	private static final String ENABLED_STR = "enable";
 
+	// Collect port information
 	private static final HashMap<NodePortTuple, SwitchPortBandwidth> portStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
 	private static final HashMap<NodePortTuple, SwitchPortBandwidth> tentativePortStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
 
-	// TODO: define flowStats and tentativeFlowStats
-//	private static final HashMap<NodePortTuple, SwitchPortBandwidth> portStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
-//	private static final HashMap<NodePortTuple, SwitchPortBandwidth> tentativePortStats = new HashMap<NodePortTuple, SwitchPortBandwidth>();
+	// Collect Flow information
+	private static final HashMap<DatapathId, FlowCount> flowStats = new HashMap<DatapathId, FlowCount>();
+	private static final HashMap<DatapathId, FlowCount> tentativeFlowStats = new HashMap<DatapathId, FlowCount>();
+	
 	/**
 	 * Run periodically to collect flow statistics from tableId = 200.
 	 * flowStats hashmap stores the flow tuple along with the number of bytes transferred 
@@ -66,8 +72,58 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 
 		@Override
 		public void run() {
-			// TODO Auto-generated method stub
-			
+			Map<DatapathId, List<OFStatsReply>> replies = getSwitchStatistics(switchService.getAllSwitchDpids(), OFStatsType.FLOW);
+			for(Entry<DatapathId, List<OFStatsReply>> e: replies.entrySet()){
+				for (OFStatsReply r : e.getValue()) {
+					OFFlowStatsReply psr = (OFFlowStatsReply) r;
+					for (OFFlowStatsEntry pse : psr.getEntries()) {
+						DatapathId dpid = e.getKey();
+						FlowCount fc;
+						if(flowStats.containsKey(dpid) || tentativeFlowStats.containsKey(dpid)){
+							if (flowStats.containsKey(dpid)) { /* update */
+								fc = flowStats.get(dpid);
+							} else if (tentativeFlowStats.containsKey(dpid)) { /* finish */
+								fc = tentativeFlowStats.get(dpid);
+								tentativePortStats.remove(dpid);
+							} else {
+								log.error("Inconsistent state between tentative and official flow stats lists.");
+								return;
+							}
+						
+						
+							// Get number of bytes counted for the flow, handling overflow scenario
+							U64 bytesCounted;
+							if (fc.getPriorByteCount().compareTo(pse.getByteCount()) > 0) { /* overflow */
+								U64 upper = U64.NO_MASK.subtract(fc.getPriorByteCount());
+								U64 lower = pse.getByteCount();
+								bytesCounted = upper.add(lower);
+							} else {
+								bytesCounted = pse.getByteCount().subtract(fc.getPriorByteCount());
+							}
+							flowStats.put(dpid, FlowCount.of(fc.getSwitchId(), fc.getSwitchPort(), 
+									fc.getTableId(),
+									U64.ofRaw(bytesCounted.getValue()), pse.getByteCount(), 
+									fc.getSrcIp(), fc.getDestIp(),
+									fc.getSrcPort(), fc.getDestPort()));
+						}  else { /* initialize */
+							Match match = pse.getMatch();
+							OFPort pt = null;
+							for(OFAction ofa : pse.getActions()){
+								if(ofa instanceof OFActionOutput){
+									OFActionOutput act = (OFActionOutput) ofa;
+									pt = act.getPort();
+								}
+							}
+							if(pt == null){
+								log.error("No output port obtained for a flow");
+								return;
+							}
+							tentativeFlowStats.put(dpid, FlowCount.of(dpid, pt, pse.getTableId(), U64.ZERO, pse.getByteCount(), 
+												match.get(MatchField.IPV4_SRC), match.get(MatchField.IPV4_DST), match.get(MatchField.TCP_SRC), match.get(MatchField.TCP_DST)));
+						}
+					}	
+				}
+			}
 		}
 		
 	}
@@ -479,5 +535,17 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 			}
 		}
 		return values;
+	}
+
+	@Override
+	public FlowCount getFlowCount(DatapathId dpid, IPv4Address srcIp, IPv4Address destIp, int srcPort, int destPort) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public Map<DatapathId, FlowCount> getFlowCount() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 }
