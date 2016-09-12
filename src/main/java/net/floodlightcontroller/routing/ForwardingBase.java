@@ -177,7 +177,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
      *        OFFlowMod.OFPFC_MODIFY etc.
      * @return true if a packet out was sent on the first-hop switch of this route
      */
-    public boolean pushRoute(Path route, Match match, OFPacketIn pi,
+    public boolean pushRoute(Path route, Match match, Match matchExt, OFPacketIn pi,
             DatapathId pinSwitch, U64 cookie, FloodlightContext cntx,
             boolean requestFlowRemovedNotification, OFFlowModCommand flowModCommand) {
 
@@ -199,23 +199,29 @@ public abstract class ForwardingBase implements IOFMessageListener {
 
             // need to build flow mod based on what type it is. Cannot set command later
             OFFlowMod.Builder fmb;
+            OFFlowMod.Builder fmbExt;	// flow mod for extensibility table
             switch (flowModCommand) {
             case ADD:
                 fmb = sw.getOFFactory().buildFlowAdd();
+                fmbExt = sw.getOFFactory().buildFlowAdd();
                 break;
             case DELETE:
                 fmb = sw.getOFFactory().buildFlowDelete();
+                fmbExt = sw.getOFFactory().buildFlowDelete();
                 break;
             case DELETE_STRICT:
                 fmb = sw.getOFFactory().buildFlowDeleteStrict();
+                fmbExt = sw.getOFFactory().buildFlowDeleteStrict();
                 break;
             case MODIFY:
                 fmb = sw.getOFFactory().buildFlowModify();
+                fmbExt = sw.getOFFactory().buildFlowModify();
                 break;
             default:
                 log.error("Could not decode OFFlowModCommand. Using MODIFY_STRICT. (Should another be used as the default?)");        
             case MODIFY_STRICT:
                 fmb = sw.getOFFactory().buildFlowModifyStrict();
+                fmbExt = sw.getOFFactory().buildFlowModifyStrict();
                 break;			
             }
 
@@ -223,6 +229,8 @@ public abstract class ForwardingBase implements IOFMessageListener {
             List<OFAction> actions = new ArrayList<OFAction>();	
             Match.Builder mb = MatchUtils.convertToVersion(match, sw.getOFFactory().getVersion());
 
+            // MatchBuilder for extensibility table 
+            Match.Builder mbExt = MatchUtils.convertToVersion(matchExt, sw.getOFFactory().getVersion());
             // set input and output ports on the switch
             OFPort outPort = switchPortList.get(indx).getPortId();
             OFPort inPort = switchPortList.get(indx - 1).getPortId();
@@ -247,8 +255,18 @@ public abstract class ForwardingBase implements IOFMessageListener {
             .setOutPort(outPort)
             .setPriority(FLOWMOD_DEFAULT_PRIORITY);
 
+            // extensibility table flow mod
+            fmbExt.setMatch(mbExt.build())
+            .setIdleTimeout(FLOWMOD_DEFAULT_IDLE_TIMEOUT)
+            .setHardTimeout(FLOWMOD_DEFAULT_HARD_TIMEOUT)
+            .setBufferId(OFBufferId.NO_BUFFER)
+            .setCookie(cookie)
+            .setOutPort(outPort)
+            .setPriority(FLOWMOD_DEFAULT_PRIORITY);
+            
             FlowModUtils.setActions(fmb, actions, sw);
-
+            FlowModUtils.setActions(fmbExt, actions, sw);
+            
             /* Configure for particular switch pipeline */
             if (sw.getOFFactory().getVersion().compareTo(OFVersion.OF_10) != 0) {
                 fmb.setTableId(FLOWMOD_DEFAULT_TABLE_ID);
@@ -273,7 +291,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
                         outPort);
             } else {
                 messageDamper.write(sw, fmb.build());
-		messageDamper.write(sw, fmb.setTableId(TableId.of(200)).build());
+                messageDamper.write(sw, fmbExt.setTableId(TableId.of(200)).build());
             }
 
             /* Push the packet out the first hop switch */

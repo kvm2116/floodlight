@@ -492,6 +492,10 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
                 pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
                     pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
 
+	Match mExt = createMatchForExtensibility(sw, srcPort, 
+            pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
+                pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
+	
         if (path != null) {
             if (log.isDebugEnabled()) {
                 log.debug("pushRoute inPort={} route={} " +
@@ -502,7 +506,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
                 log.debug("Creating flow rules on the route, match rule: {}", m);
             }
 
-            pushRoute(path, m, pi, sw.getId(), cookie, 
+            pushRoute(path, m, mExt, pi, sw.getId(), cookie, 
                     cntx, requestFlowRemovedNotifn,
                     OFFlowModCommand.ADD);	
         } else {
@@ -515,7 +519,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
             npts.add(new NodePortTuple(dstDevice.getAttachmentPoints()[0].getNodeId(),
                     dstDevice.getAttachmentPoints()[0].getPortId()));
             path.setPath(npts);
-            pushRoute(path, m, pi, sw.getId(), cookie,
+            pushRoute(path, m, mExt, pi, sw.getId(), cookie,
                     cntx, requestFlowRemovedNotifn,
                     OFFlowModCommand.ADD);
         }
@@ -530,6 +534,40 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
 
     }
 
+    /**
+     * Create a Match for HP's extensibility table
+     * The match criteria is IP addresses and TCP ports
+     * @param sw
+     * @param inPort
+     * @param v
+     * @param cntx
+     * @return
+     */
+    protected Match createMatchForExtensibility(IOFSwitch sw, OFPort inPort, VlanVid v, FloodlightContext cntx) {
+    	 Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+         VlanVid vlan = v == null ? VlanVid.ofVlan(eth.getVlanID()) :  v;
+         Match.Builder mb = sw.getOFFactory().buildMatch();
+         if (FLOWMOD_DEFAULT_MATCH_VLAN) {
+             if (!vlan.equals(VlanVid.ZERO)) {
+                 mb.setExact(MatchField.VLAN_VID, OFVlanVidMatch.ofVlanVid(vlan));
+             }
+         }
+         if (eth.getEtherType() == EthType.IPv4) { /* shallow check for equality is okay for EthType */
+             IPv4 ip = (IPv4) eth.getPayload();
+             IPv4Address srcIp = ip.getSourceAddress();
+             IPv4Address dstIp = ip.getDestinationAddress();
+             mb.setExact(MatchField.ETH_TYPE, EthType.IPv4);
+             mb.setExact(MatchField.IPV4_SRC, srcIp);
+             mb.setExact(MatchField.IPV4_DST, dstIp);
+             if (ip.getProtocol().equals(IpProtocol.TCP)) {
+            	 TCP tcp = (TCP) ip.getPayload();
+            	 mb.setExact(MatchField.TCP_SRC, tcp.getSourcePort());
+                 mb.setExact(MatchField.TCP_DST, tcp.getDestinationPort());
+             }
+         }
+         return mb.build();
+    }
+    
     /**
      * Instead of using the Firewall's routing decision Match, which might be as general
      * as "in_port" and inadvertently Match packets erroneously, construct a more
