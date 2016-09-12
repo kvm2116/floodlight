@@ -563,6 +563,12 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
             	 TCP tcp = (TCP) ip.getPayload();
             	 mb.setExact(MatchField.TCP_SRC, tcp.getSourcePort());
                  mb.setExact(MatchField.TCP_DST, tcp.getDestinationPort());
+                 StringBuffer sb = new StringBuffer();
+            	 sb.append("TCP protocol detected, srcport:");
+            	 sb.append(tcp.getSourcePort());
+            	 sb.append("\tdstport:");
+            	 sb.append(tcp.getDestinationPort());
+            	 log.warn(sb.toString());
              }
          }
          return mb.build();
