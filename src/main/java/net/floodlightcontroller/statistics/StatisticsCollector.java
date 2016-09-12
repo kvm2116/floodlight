@@ -43,7 +43,8 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 	
 	private static int portStatsInterval = 10; /* could be set by REST API, so not final */
 	private static ScheduledFuture<?> portStatsCollector;
-
+	private static ScheduledFuture<?> flowStatsCollector;
+	
 	private static final long BITS_PER_BYTE = 8;
 	private static final long MILLIS_PER_SEC = 1000;
 	
@@ -342,7 +343,9 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 	 */
 	private void startStatisticsCollection() {
 		portStatsCollector = threadPoolService.getScheduledExecutor().scheduleAtFixedRate(new PortStatsCollector(), portStatsInterval, portStatsInterval, TimeUnit.SECONDS);
+		flowStatsCollector = threadPoolService.getScheduledExecutor().scheduleAtFixedRate(new FlowStatsCollector(), portStatsInterval, portStatsInterval, TimeUnit.SECONDS);
 		tentativePortStats.clear(); /* must clear out, otherwise might have huge BW result if present and wait a long time before re-enabling stats */
+		tentativeFlowStats.clear();
 		log.warn("Statistics collection thread(s) started");
 	}
 	
@@ -351,6 +354,11 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 	 */
 	private void stopStatisticsCollection() {
 		if (!portStatsCollector.cancel(false)) {
+			log.error("Could not cancel port stats thread");
+		} else {
+			log.warn("Statistics collection thread(s) stopped");
+		}
+		if (!flowStatsCollector.cancel(false)) {
 			log.error("Could not cancel port stats thread");
 		} else {
 			log.warn("Statistics collection thread(s) stopped");
