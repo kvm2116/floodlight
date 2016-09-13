@@ -15,6 +15,8 @@ import org.projectfloodlight.openflow.types.TableId;
 import org.projectfloodlight.openflow.types.TransportPort;
 import org.projectfloodlight.openflow.types.U64;
 
+import net.floodlightcontroller.flowscheduler.Flow;
+
 public class FlowCount {
 	private DatapathId id;
 	private OFPort pt;
@@ -23,27 +25,21 @@ public class FlowCount {
 	private U64 byteSent;			// number of bytes sent within last time interval
 	private Date time;
 	private U64 byteCount;			// total number of bytes sent from start of time
-	private IPv4Address srcIp;		// flow source ip address
-	private IPv4Address destIp;		// flow destination ip address
-	private TransportPort srcPort;			// flow source port number
-	private TransportPort destPort;			// flow destination port number
+	private Flow flow;
 	
 	private FlowCount() {}
-	private FlowCount(DatapathId d, OFPort p, TableId tableId, U64 byteSent, U64 byteCount, IPv4Address srcIp, IPv4Address destIp, TransportPort srcPort, TransportPort destPort) {
+	private FlowCount(DatapathId d, OFPort p, TableId tableId, U64 byteSent, U64 byteCount, Flow flow) {
 		id = d;
 		pt = p;
 		this.tableId = tableId;
 		this.byteCount = byteCount;
 		time = new Date();
 		this.byteCount = byteCount;
-		this.srcIp = srcIp;
-		this.destIp = destIp;
-		this.srcPort = srcPort;
-		this.destPort = destPort;
+		this.flow = flow;
 		
 	}
 	
-	public static FlowCount of(DatapathId d, OFPort p, TableId tableId, U64 byteSent, U64 byteCount, IPv4Address srcIp, IPv4Address destIp, TransportPort srcPort, TransportPort destPort) {
+	public static FlowCount of(DatapathId d, OFPort p, TableId tableId, U64 byteSent, U64 byteCount, Flow flow) {
 		if (d == null) {
 			throw new IllegalArgumentException("Datapath ID cannot be null");
 		}
@@ -53,23 +49,23 @@ public class FlowCount {
 		if (tableId.getValue() != 100 || tableId.getValue() != 200) {
 			throw new IllegalArgumentException("tableId has to be either 100 or 200");
 		}
-		if (srcIp == null){
+		if (flow.getSrcIp() == null){
 			throw new IllegalArgumentException("Source IP address cannot be null");
 		}
-		if (destIp == null){
+		if (flow.getDstIp() == null){
 			throw new IllegalArgumentException("Destination IP address cannot be null");
 		}
-		if(srcPort == null){
+		if(flow.getSrcPort() == null){
 			throw new IllegalArgumentException("Source port cannot be null");
-		} else if (srcPort.getPort() < 0 || srcPort.getPort() > 65535){
+		} else if (flow.srcPort.getPort() < 0 || flow.getSrcPort().getPort() > 65535){
 				throw new IllegalArgumentException("Source port number should be between 0 and 65535");
 		}
-		if(destPort == null){
+		if(flow.getDstPort() == null){
 			throw new IllegalArgumentException("Destination port cannot be null");
-		} else if (destPort.getPort() < 0 || destPort.getPort() > 65535){
+		} else if (flow.getDstPort().getPort() < 0 || flow.getDstPort().getPort() > 65535){
 				throw new IllegalArgumentException("Destination port number should be between 0 and 65535");
 		}
-		return new FlowCount(d, p, tableId, byteSent, byteCount, srcIp, destIp, srcPort, destPort);
+		return new FlowCount(d, p, tableId, byteSent, byteCount, flow);
 	}
 	
 	public DatapathId getSwitchId() {
@@ -96,20 +92,8 @@ public class FlowCount {
 		return byteCount;
 	}
 	
-	public IPv4Address getSrcIp(){
-		return srcIp;
-	}
-	
-	public IPv4Address getDestIp(){
-		return destIp;
-	}
-	
-	public TransportPort getSrcPort(){
-		return srcPort;
-	}
-	
-	public TransportPort getDestPort(){
-		return destPort;
+	public Flow getFlow(){
+		return flow;
 	}
 	
 	public long getUpdateTime() {
@@ -121,10 +105,10 @@ public class FlowCount {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + ((id == null) ? 0 : id.hashCode());
-		result = prime * result + ((srcIp == null) ? 0 : srcIp.hashCode());
-		result = prime * result + ((destIp == null) ? 0 : destIp.hashCode());
-		result = prime * result + ((srcPort == null) ? 0 : srcPort.hashCode());
-		result = prime * result + ((destPort == null) ? 0 : destPort.hashCode());
+		result = prime * result + ((flow.getSrcIp() == null) ? 0 : flow.getSrcIp().hashCode());
+		result = prime * result + ((flow.getDstIp() == null) ? 0 : flow.getDstIp().hashCode());
+		result = prime * result + ((flow.getSrcPort() == null) ? 0 : flow.getSrcPort().hashCode());
+		result = prime * result + ((flow.getDstPort() == null) ? 0 : flow.getDstPort().hashCode());
 		return result;
 	}
 	
@@ -143,19 +127,19 @@ public class FlowCount {
 		} else if (!id.equals(other.id))
 			return false;
 		// TODO: compare other match fields in this method
-		if (srcIp == null) {  
-			if (other.srcIp != null)
+		if (flow.getSrcIp() == null) {  
+			if (other.flow.getSrcIp()  != null)
 				return false;
-		} else if (!srcIp.equals(other.srcIp))
+		} else if (!flow.getSrcIp() .equals(other.flow.getSrcIp() ))
 			return false;
-		if (destIp == null) {  
-			if (other.destIp != null)
+		if (flow.getDstIp() == null) {  
+			if (other.flow.getDstIp() != null)
 				return false;
-		} else if (!srcIp.equals(other.destIp))
+		} else if (!flow.getDstIp().equals(other.flow.getDstIp()))
 			return false;
-		if (srcPort != other.srcPort)
+		if (flow.getSrcPort().getPort() != other.flow.getSrcPort().getPort())
 			return false;
-		if (destPort != other.destPort)
+		if (flow.getDstPort().getPort() != other.flow.getDstPort().getPort())
 			return false;
 		return true;
 	}

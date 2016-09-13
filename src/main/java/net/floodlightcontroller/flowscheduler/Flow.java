@@ -36,4 +36,21 @@ public class Flow {
 		sb.append(dstPort.getPort());
 		return sb.toString();
 	}
+	
+	public IPv4Address getSrcIp(){
+		return srcIp;
+	}
+	
+	public IPv4Address getDstIp(){
+		return dstIp;
+	}
+	
+	public TransportPort getSrcPort(){
+		return srcPort;
+	}
+	
+	public TransportPort getDstPort(){
+		return dstPort;
+	}
+	
 }

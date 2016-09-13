@@ -9,6 +9,7 @@ import net.floodlightcontroller.core.module.FloodlightModuleException;
 import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.core.types.NodePortTuple;
+import net.floodlightcontroller.flowscheduler.Flow;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.statistics.web.SwitchStatisticsWebRoutable;
 import net.floodlightcontroller.threadpool.IThreadPoolService;
@@ -104,8 +105,7 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 							flowStats.put(dpid, FlowCount.of(fc.getSwitchId(), fc.getSwitchPort(), 
 									fc.getTableId(),
 									U64.ofRaw(bytesCounted.getValue()), pse.getByteCount(), 
-									fc.getSrcIp(), fc.getDestIp(),
-									fc.getSrcPort(), fc.getDestPort()));
+									fc.getFlow()));
 						}  else { /* initialize */
 							Match match = pse.getMatch();
 							OFPort pt = null;
@@ -119,8 +119,8 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 								log.error("No output port obtained for a flow");
 								return;
 							}
-							tentativeFlowStats.put(dpid, FlowCount.of(dpid, pt, pse.getTableId(), U64.ZERO, pse.getByteCount(), 
-												match.get(MatchField.IPV4_SRC), match.get(MatchField.IPV4_DST), match.get(MatchField.TCP_SRC), match.get(MatchField.TCP_DST)));
+							Flow flow = new Flow(match.get(MatchField.IPV4_SRC), match.get(MatchField.IPV4_DST), match.get(MatchField.TCP_SRC), match.get(MatchField.TCP_DST));
+							tentativeFlowStats.put(dpid, FlowCount.of(dpid, pt, pse.getTableId(), U64.ZERO, pse.getByteCount(), flow));
 						}
 					}	
 				}
