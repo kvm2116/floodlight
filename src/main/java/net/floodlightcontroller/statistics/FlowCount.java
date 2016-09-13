@@ -128,9 +128,9 @@ public class FlowCount {
 			return false;
 		// TODO: compare other match fields in this method
 		if (flow.getSrcIp() == null) {  
-			if (other.flow.getSrcIp()  != null)
+			if (other.flow.getSrcIp() != null)
 				return false;
-		} else if (!flow.getSrcIp() .equals(other.flow.getSrcIp() ))
+		} else if (!flow.getSrcIp().equals(other.flow.getSrcIp()))
 			return false;
 		if (flow.getDstIp() == null) {  
 			if (other.flow.getDstIp() != null)
