@@ -57,7 +57,7 @@ public class FlowCount {
 		}
 		if(flow.getSrcPort() == null){
 			throw new IllegalArgumentException("Source port cannot be null");
-		} else if (flow.srcPort.getPort() < 0 || flow.getSrcPort().getPort() > 65535){
+		} else if (flow.getSrcPort().getPort() < 0 || flow.getSrcPort().getPort() > 65535){
 				throw new IllegalArgumentException("Source port number should be between 0 and 65535");
 		}
 		if(flow.getDstPort() == null){
