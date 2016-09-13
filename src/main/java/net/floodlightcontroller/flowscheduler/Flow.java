@@ -14,10 +14,10 @@ import net.floodlightcontroller.statistics.FlowCount;
  */
 public class Flow {
 
-	public IPv4Address srcIp;
-	public IPv4Address dstIp;
-	public TransportPort srcPort;
-	public TransportPort dstPort;
+	private IPv4Address srcIp;
+	private IPv4Address dstIp;
+	private TransportPort srcPort;
+	private TransportPort dstPort;
 	
 	public Flow(IPv4Address srcIp, IPv4Address dstIp, TransportPort srcPort, TransportPort dstPort){
 		this.srcIp = srcIp;
