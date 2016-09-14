@@ -14,11 +14,17 @@ import org.projectfloodlight.openflow.types.U64;
  */
 public class Group {
 	
-	private Set<Flow> flows;
+	private int id;					// group id
+	private Set<Flow> flows;		// set of flows in the group
 	private U64 bwConsumed;			// group bandwidth consumed
 	
-	public Group(){
+	public Group(int id){
+		this.id = id;
 		flows = new HashSet<Flow>();
+	}
+	
+	public int getGroupId(){
+		return id;
 	}
 	
 	public void addFlow(Flow flow){
