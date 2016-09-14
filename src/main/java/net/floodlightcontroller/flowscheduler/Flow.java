@@ -6,22 +6,17 @@ package net.floodlightcontroller.flowscheduler;
 import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.TransportPort;
 
-import net.floodlightcontroller.statistics.FlowCount;
-
 /**
  * @author kunalmahajan
  * mkunal@cs.columbia.edu
  */
 public class Flow {
 
-	private IPv4Address srcIp;
-	private IPv4Address dstIp;
+	private SrcDstIPTuple ipAddresses;
 	private TransportPort srcPort;
 	private TransportPort dstPort;
 	
-	public Flow(IPv4Address srcIp, IPv4Address dstIp, TransportPort srcPort, TransportPort dstPort){
-		this.srcIp = srcIp;
-		this.dstIp = dstIp;
+	public Flow(SrcDstIPTuple ipAddresses, TransportPort srcPort, TransportPort dstPort){
 		this.srcPort = srcPort;
 		this.dstPort = dstPort;
 	}
@@ -29,9 +24,9 @@ public class Flow {
 	public String toString(){
 		StringBuffer sb = new StringBuffer();
 		sb.append("srcIp: ");
-		sb.append(srcIp.toString());
+		sb.append(ipAddresses.getSrcIp().toString());
 		sb.append("\tdstIp: ");
-		sb.append(dstIp.toString());
+		sb.append(ipAddresses.getDstIp().toString());
 		sb.append("\tsrcPort: ");
 		sb.append(srcPort.getPort());
 		sb.append("\tdstPort: ");
@@ -40,11 +35,11 @@ public class Flow {
 	}
 	
 	public IPv4Address getSrcIp(){
-		return srcIp;
+		return ipAddresses.getSrcIp();
 	}
 	
 	public IPv4Address getDstIp(){
-		return dstIp;
+		return ipAddresses.getDstIp();
 	}
 	
 	public TransportPort getSrcPort(){
@@ -59,8 +54,8 @@ public class Flow {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((srcIp == null) ? 0 : srcIp.hashCode());
-		result = prime * result + ((dstIp == null) ? 0 : dstIp.hashCode());
+		result = prime * result + ((ipAddresses.getSrcIp() == null) ? 0 : ipAddresses.getSrcIp().hashCode());
+		result = prime * result + ((ipAddresses.getDstIp() == null) ? 0 : ipAddresses.getDstIp().hashCode());
 		result = prime * result + ((srcPort == null) ? 0 : srcPort.hashCode());
 		result = prime * result + ((dstPort == null) ? 0 : dstPort.hashCode());
 		return result;
@@ -75,15 +70,15 @@ public class Flow {
 		if (getClass() != obj.getClass())
 			return false;
 		Flow other = (Flow) obj;
-		if (srcIp == null) {  
-			if (other.srcIp  != null)
+		if (ipAddresses.getSrcIp() == null) {  
+			if (other.ipAddresses.getSrcIp()  != null)
 				return false;
-		} else if (!srcIp.equals(other.srcIp))
+		} else if (!ipAddresses.getSrcIp().equals(other.ipAddresses.getSrcIp()))
 			return false;
-		if (dstIp == null) {  
-			if (other.dstIp != null)
+		if (ipAddresses.getDstIp() == null) {  
+			if (other.ipAddresses.getDstIp() != null)
 				return false;
-		} else if (!dstIp.equals(other.dstIp))
+		} else if (!ipAddresses.getDstIp().equals(other.ipAddresses.getDstIp()))
 			return false;
 		if (srcPort.getPort() != other.srcPort.getPort())
 			return false;

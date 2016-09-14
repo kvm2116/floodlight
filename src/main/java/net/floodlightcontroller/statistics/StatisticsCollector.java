@@ -10,6 +10,7 @@ import net.floodlightcontroller.core.module.IFloodlightModule;
 import net.floodlightcontroller.core.module.IFloodlightService;
 import net.floodlightcontroller.core.types.NodePortTuple;
 import net.floodlightcontroller.flowscheduler.Flow;
+import net.floodlightcontroller.flowscheduler.SrcDstIPTuple;
 import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.statistics.web.SwitchStatisticsWebRoutable;
 import net.floodlightcontroller.threadpool.IThreadPoolService;
@@ -119,7 +120,8 @@ public class StatisticsCollector implements IFloodlightModule, IStatisticsServic
 								log.error("No output port obtained for a flow");
 								return;
 							}
-							Flow flow = new Flow(match.get(MatchField.IPV4_SRC), match.get(MatchField.IPV4_DST), match.get(MatchField.TCP_SRC), match.get(MatchField.TCP_DST));
+							SrcDstIPTuple ipAddresses = new SrcDstIPTuple(match.get(MatchField.IPV4_SRC), match.get(MatchField.IPV4_DST));
+							Flow flow = new Flow(ipAddresses, match.get(MatchField.TCP_SRC), match.get(MatchField.TCP_DST));
 							tentativeFlowStats.put(dpid, FlowCount.of(dpid, pt, pse.getTableId(), U64.ZERO, pse.getByteCount(), flow));
 						}
 					}	

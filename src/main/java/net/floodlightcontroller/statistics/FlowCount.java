@@ -9,10 +9,8 @@ package net.floodlightcontroller.statistics;
 import java.util.Date;
 
 import org.projectfloodlight.openflow.types.DatapathId;
-import org.projectfloodlight.openflow.types.IPv4Address;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.TableId;
-import org.projectfloodlight.openflow.types.TransportPort;
 import org.projectfloodlight.openflow.types.U64;
 
 import net.floodlightcontroller.flowscheduler.Flow;
@@ -126,20 +124,10 @@ public class FlowCount {
 				return false;
 		} else if (!id.equals(other.id))
 			return false;
-		// TODO: compare other match fields in this method
-		if (flow.getSrcIp() == null) {  
-			if (other.flow.getSrcIp() != null)
+		if (flow == null) {  
+			if (other.flow != null)
 				return false;
-		} else if (!flow.getSrcIp().equals(other.flow.getSrcIp()))
-			return false;
-		if (flow.getDstIp() == null) {  
-			if (other.flow.getDstIp() != null)
-				return false;
-		} else if (!flow.getDstIp().equals(other.flow.getDstIp()))
-			return false;
-		if (flow.getSrcPort().getPort() != other.flow.getSrcPort().getPort())
-			return false;
-		if (flow.getDstPort().getPort() != other.flow.getDstPort().getPort())
+		} else if (!flow.equals(other.flow))
 			return false;
 		return true;
 	}
