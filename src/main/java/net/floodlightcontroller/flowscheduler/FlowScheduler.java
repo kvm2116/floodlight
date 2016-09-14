@@ -84,6 +84,8 @@ public class FlowScheduler implements IOFMessageListener, IFloodlightModule {
 	@Override
 	public net.floodlightcontroller.core.IListener.Command receive(IOFSwitch sw, OFMessage msg,
 			FloodlightContext cntx) {
+		// TODO implement the main algorithm here
+		
 		Ethernet eth =
 				IFloodlightProviderService.bcStore.get(cntx,
 						IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
