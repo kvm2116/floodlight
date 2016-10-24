@@ -560,6 +560,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     		mb.setExact(MatchField.IPV4_DST, dstIp);
     		if (ip.getProtocol().equals(IpProtocol.TCP)) { 	/* add port numbers */
     			TCP tcp = (TCP) ip.getPayload();
+			mb.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
     			mb.setExact(MatchField.TCP_SRC, tcp.getSourcePort());
     			mb.setExact(MatchField.TCP_DST, tcp.getDestinationPort());
     		}
