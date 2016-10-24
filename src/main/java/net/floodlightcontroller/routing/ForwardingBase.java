@@ -257,7 +257,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
             .setPriority(FLOWMOD_DEFAULT_PRIORITY);
             
             // extensibility table flow mod
-            fmb.setMatch(mb.build())
+            fmbExt.setMatch(mbExt.build())
             .setIdleTimeout(FLOWMOD_DEFAULT_IDLE_TIMEOUT)
             .setHardTimeout(FLOWMOD_DEFAULT_HARD_TIMEOUT)
             .setBufferId(OFBufferId.NO_BUFFER)
