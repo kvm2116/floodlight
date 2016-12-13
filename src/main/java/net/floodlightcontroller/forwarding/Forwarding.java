@@ -51,6 +51,7 @@ import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.packet.IPv6;
 import net.floodlightcontroller.packet.TCP;
 import net.floodlightcontroller.packet.UDP;
+import net.floodlightcontroller.restserver.IRestApiService;
 import net.floodlightcontroller.routing.ForwardingBase;
 import net.floodlightcontroller.routing.IRoutingDecision;
 import net.floodlightcontroller.routing.IRoutingDecisionChangedListener;
@@ -97,6 +98,8 @@ import org.slf4j.LoggerFactory;
 public class Forwarding extends ForwardingBase implements IFloodlightModule, IOFSwitchListener, ILinkDiscoveryListener, IRoutingDecisionChangedListener {
     protected static final Logger log = LoggerFactory.getLogger(Forwarding.class);
 
+    protected IRestApiService restApiService;
+    
     /*
      * Cookies are 64 bits:
      * Example: 0x0123456789ABCDEF
@@ -766,6 +769,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
         l.add(ITopologyService.class);
         l.add(IDebugCounterService.class);
         l.add(ILinkDiscoveryService.class);
+        l.add(IRestApiService.class);
         return l;
     }
 
@@ -779,7 +783,8 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
         this.debugCounterService = context.getServiceImpl(IDebugCounterService.class);
         this.switchService = context.getServiceImpl(IOFSwitchService.class);
         this.linkService = context.getServiceImpl(ILinkDiscoveryService.class);
-
+        this.restApiService = context.getServiceImpl(IRestApiService.class);
+        
         flowSetIdRegistry = FlowSetIdRegistry.getInstance();
 
         Map<String, String> configParameters = context.getConfigParams(this);
@@ -890,7 +895,8 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
         super.startUp();
         switchService.addOFSwitchListener(this);
         routingEngineService.addRoutingDecisionChangedListener(this);
-
+        restApiService.addRestletRoutable(new ForwardingRoutable());
+        
         /* Register only if we want to remove stale flows */
         if (REMOVE_FLOWS_ON_LINK_OR_PORT_DOWN) {
             linkService.addListener(this);
