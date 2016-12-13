@@ -99,6 +99,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     protected static final Logger log = LoggerFactory.getLogger(Forwarding.class);
 
     protected IRestApiService restApiService;
+    public static final String TABLE_NAME = "controller_forwardingtable";
     
     /*
      * Cookies are 64 bits:
