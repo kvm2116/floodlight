@@ -18,6 +18,7 @@
 package net.floodlightcontroller.routing;
 
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -118,10 +119,14 @@ public abstract class ForwardingBase implements IOFMessageListener {
     private static int OFMESSAGE_DAMPER_CAPACITY = 10000;
     private static int OFMESSAGE_DAMPER_TIMEOUT = 250; // ms
     
+    // Store cache of Match already added to the mac-ip table
+    protected HashSet<Match> cacheMacTable;
+    
     protected void init() {
         messageDamper = new OFMessageDamper(OFMESSAGE_DAMPER_CAPACITY,
                 EnumSet.of(OFType.FLOW_MOD),
                 OFMESSAGE_DAMPER_TIMEOUT);
+        cacheMacTable = new HashSet<Match>();
     }
 
     protected void startUp() {
@@ -247,7 +252,11 @@ public abstract class ForwardingBase implements IOFMessageListener {
                 flags.add(OFFlowModFlags.SEND_FLOW_REM);
                 fmb.setFlags(flags);
             }
-
+            
+            if(cacheMacTable.contains(mb.build())){
+            	System.out.println("MAC ENTRY MATCHED -----------------------------");
+            	return false;
+            }
             fmb.setMatch(mb.build())
             .setIdleTimeout(FLOWMOD_DEFAULT_IDLE_TIMEOUT)
             .setHardTimeout(FLOWMOD_DEFAULT_HARD_TIMEOUT)
