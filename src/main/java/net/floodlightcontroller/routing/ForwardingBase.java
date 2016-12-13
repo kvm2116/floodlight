@@ -252,7 +252,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
                 flags.add(OFFlowModFlags.SEND_FLOW_REM);
                 fmb.setFlags(flags);
             }
-            
+            log.warn("Testing if cacheMacTable works");
             if(cacheMacTable.contains(mb.build())){
             	log.error("MAC ENTRY MATCHED -----------------------------");
             	return false;
