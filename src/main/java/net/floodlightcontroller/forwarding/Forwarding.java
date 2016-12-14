@@ -565,9 +565,11 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     protected int getOutputPort(IPv4Address srcIp, IPv4Address dstIp, int groupNumber){
     	String srcIP = srcIp.toString();
     	String dstIP = dstIp.toString();
-    	log.warn(srcIp.toString());
-		log.warn(dstIp.toString());
     	IPTuple ipTup = new IPTuple(srcIP, dstIP);
+    	for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
+		    log.warn(entry.getKey()+" : "+entry.getValue());
+		}
+    	log.warn(ipTup.toString());
     	if(Forwarding.groupAssignments.containsKey(ipTup)){
     		HashMap<Integer, Integer> groupMapping = Forwarding.groupAssignments.get(ipTup);
     		return groupMapping.get(groupNumber);

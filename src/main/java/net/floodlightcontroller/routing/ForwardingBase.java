@@ -119,14 +119,11 @@ public abstract class ForwardingBase implements IOFMessageListener {
     private static int OFMESSAGE_DAMPER_CAPACITY = 10000;
     private static int OFMESSAGE_DAMPER_TIMEOUT = 250; // ms
     
-    // Store cache of Match already added to the mac-ip table
-    protected HashSet<Match> cacheMacTable;
     
     protected void init() {
         messageDamper = new OFMessageDamper(OFMESSAGE_DAMPER_CAPACITY,
                 EnumSet.of(OFType.FLOW_MOD),
                 OFMESSAGE_DAMPER_TIMEOUT);
-        cacheMacTable = new HashSet<Match>();
     }
 
     protected void startUp() {
@@ -246,6 +243,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
             }
             
             // Checking if an output port is specified for this flow rule
+            log.warn("Integer output port = " + Integer.toString(outputPort));
             if(outputPort > 0){
             	outPort = OFPort.ofInt(outputPort);
             	log.warn("Using output port from the Group Assignments = " + outPort.toString());
@@ -260,11 +258,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
                 flags.add(OFFlowModFlags.SEND_FLOW_REM);
                 fmb.setFlags(flags);
             }
-            log.warn("Testing if cacheMacTable works");
-            if(cacheMacTable.contains(mb.build())){
-            	log.error("MAC ENTRY MATCHED -----------------------------");
-            	return false;
-            }
+            
             fmb.setMatch(mb.build())
             .setIdleTimeout(FLOWMOD_DEFAULT_IDLE_TIMEOUT)
             .setHardTimeout(FLOWMOD_DEFAULT_HARD_TIMEOUT)
