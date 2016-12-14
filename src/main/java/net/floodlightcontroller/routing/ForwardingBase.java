@@ -243,7 +243,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
             }
             
             // Checking if an output port is specified for this flow rule
-            log.warn("Integer output port = " + Integer.toString(outputPort));
+//            log.warn("Integer output port = " + Integer.toString(outputPort));
             if(outputPort > 0){
             	outPort = OFPort.ofInt(outputPort);
             	log.warn("Using output port from the Group Assignments = " + outPort.toString());

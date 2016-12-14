@@ -566,10 +566,10 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     	String srcIP = srcIp.toString();
     	String dstIP = dstIp.toString();
     	IPTuple ipTup = new IPTuple(srcIP, dstIP);
-    	for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
-		    log.warn("MAP" + entry.getKey()+" : "+entry.getValue());
-		}
-    	log.warn(ipTup.toString());
+//    	for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
+//		    log.warn("MAP" + entry.getKey()+" : "+entry.getValue());
+//		}
+//    	log.warn(ipTup.toString());
     	if(Forwarding.groupAssignments.containsKey(ipTup)){
     		HashMap<Integer, Integer> groupMapping = Forwarding.groupAssignments.get(ipTup);
     		return groupMapping.get(groupNumber);
