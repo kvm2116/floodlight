@@ -41,6 +41,10 @@ public class ForwardingGroupsAssignmentResource extends ServerResource {
 	 */
 	@Post
 	public String store(String json) {
+		if(json == "" || json.equals("{}")){
+			log.warn("empty message received");
+			return null;
+		}
 		try {
 			jsonToStorageEntry(json);
 		} catch (IOException e) {
