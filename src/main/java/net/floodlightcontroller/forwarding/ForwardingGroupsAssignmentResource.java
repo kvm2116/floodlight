@@ -78,10 +78,8 @@ public class ForwardingGroupsAssignmentResource extends ServerResource {
 				String ipTupleStr = s.toString().replaceAll("'", "");
 				String ipTuple = ipTupleStr.substring(1, ipTupleStr.length()-1);
 				String[] ips = ipTuple.split(",");
-				log.warn("RESOURCE  " + ips[0].trim().substring(1));
-				log.warn("RESOURCE  " + ips[1].trim().substring(1));
 				// create a IPTuple
-				IPTuple ipTup = new IPTuple(ips[0], ips[1]);
+				IPTuple ipTup = new IPTuple(ips[0].trim().substring(1), ips[1].trim().substring(1));
 				// create a hashMap with new group assignments for this IPTuple
 				HashMap<Integer, Integer> mapping = new HashMap<Integer, Integer>();
 				for(String s1 : JSONObject.getNames(jo2)){
