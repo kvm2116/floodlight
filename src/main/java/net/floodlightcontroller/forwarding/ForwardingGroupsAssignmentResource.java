@@ -81,12 +81,8 @@ public class ForwardingGroupsAssignmentResource extends ServerResource {
 				for(String s1 : JSONObject.getNames(jo2)){
 					// add <group, port> in the mapping
 					mapping.put(Integer.parseInt(s1), jo2.getInt(s1));
-					log.warn(mapping.toString());
 				}
 				Forwarding.groupAssignments.put(ipTup, mapping);
-			}
-			for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
-			    log.warn(entry.getKey()+" : "+entry.getValue());
 			}
 			
 		} catch (JSONException e) {

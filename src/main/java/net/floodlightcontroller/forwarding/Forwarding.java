@@ -547,6 +547,9 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     * @return
     */
     protected Match createMatchForExtensibility(IOFSwitch sw, OFPort inPort, VlanVid v, FloodlightContext cntx) {
+    	for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
+		    log.warn(entry.getKey()+" : "+entry.getValue());
+		}
     	Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
     	VlanVid vlan = v == null ? VlanVid.ofVlan(eth.getVlanID()) :  v;
     	Match.Builder mb = sw.getOFFactory().buildMatch();
