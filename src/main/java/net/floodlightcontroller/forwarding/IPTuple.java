@@ -27,7 +27,7 @@ public class IPTuple {
 		StringBuffer sb = new StringBuffer();
 		sb.append("srcIp: ");
 		sb.append(srcIp.toString());
-		sb.append("\tdstIp: ");
+		sb.append(", dstIp: ");
 		sb.append(dstIp.toString());
 		return sb.toString();
 	}

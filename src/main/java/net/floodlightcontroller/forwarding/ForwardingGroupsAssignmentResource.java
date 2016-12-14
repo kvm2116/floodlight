@@ -4,11 +4,14 @@
 package net.floodlightcontroller.forwarding;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.projectfloodlight.openflow.protocol.match.MatchFields;
+import org.projectfloodlight.openflow.types.IPv4Address;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 import org.slf4j.Logger;
@@ -64,7 +67,6 @@ public class ForwardingGroupsAssignmentResource extends ServerResource {
 		String new_string = fmJson.replace("\\", "");
 		String json_string = new_string.substring(1, new_string.length() - 1);
 		JSONObject jo = null;
-		log.warn(json_string);
 		try {
 			jo = new JSONObject(json_string);
 			for(String s : JSONObject.getNames(jo)){
@@ -72,14 +74,21 @@ public class ForwardingGroupsAssignmentResource extends ServerResource {
 				String ipTupleStr = s.toString().replaceAll("'", "");
 				String ipTuple = ipTupleStr.substring(1, ipTupleStr.length()-1);
 				String[] ips = ipTuple.split(",");
-				String src_ip = ips[0];
-				String dst_ip = ips[1];
-				log.warn(src_ip + "    "  + dst_ip);
+				// create a IPTuple
+				IPTuple ipTup = new IPTuple(ips[0], ips[1]);
+				// create a hashMap with new group assignments for this IPTuple
+				HashMap<Integer, Integer> mapping = new HashMap<Integer, Integer>();
 				for(String s1 : JSONObject.getNames(jo2)){
-					int group = Integer.parseInt(s1);
-					int port = jo2.getInt(s1);
+					// add <group, port> in the mapping
+					mapping.put(Integer.parseInt(s1), jo2.getInt(s1));
+					log.warn(mapping.toString());
 				}
+				Forwarding.groupAssignments.put(ipTup, mapping);
 			}
+			for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
+			    log.warn(entry.getKey()+" : "+entry.getValue());
+			}
+			
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

@@ -20,6 +20,7 @@ package net.floodlightcontroller.forwarding;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -99,8 +100,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     protected static final Logger log = LoggerFactory.getLogger(Forwarding.class);
 
     protected IRestApiService restApiService;
-    public static final String TABLE_NAME = "controller_forwardingtable";
-    
+    protected static Map<IPTuple, HashMap<Integer, Integer>> groupAssignments;
     /*
      * Cookies are 64 bits:
      * Example: 0x0123456789ABCDEF
@@ -787,7 +787,8 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
         this.restApiService = context.getServiceImpl(IRestApiService.class);
         
         flowSetIdRegistry = FlowSetIdRegistry.getInstance();
-
+        groupAssignments = new HashMap<IPTuple, HashMap<Integer, Integer>>();
+        
         Map<String, String> configParameters = context.getConfigParams(this);
         String tmp = configParameters.get("hard-timeout");
         if (tmp != null) {
