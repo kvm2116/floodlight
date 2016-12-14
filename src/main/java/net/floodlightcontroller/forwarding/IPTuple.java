@@ -1,6 +1,5 @@
 package net.floodlightcontroller.forwarding;
 
-import org.projectfloodlight.openflow.types.IPv4Address;
 
 /**
  * @author kunalmahajan
@@ -16,10 +15,10 @@ import org.projectfloodlight.openflow.types.IPv4Address;
 
 public class IPTuple {
     
-	private IPv4Address srcIp;
-	private IPv4Address dstIp;
+	private String srcIp;
+	private String dstIp;
 	
-	public IPTuple(IPv4Address srcIp, IPv4Address dstIp){
+	public IPTuple(String srcIp, String dstIp){
 		this.srcIp = srcIp;
 		this.dstIp = dstIp;
 	}
@@ -33,11 +32,11 @@ public class IPTuple {
 		return sb.toString();
 	}
 	
-	public IPv4Address getSrcIp(){
+	public String getSrcIp(){
 		return srcIp;
 	}
 	
-	public IPv4Address getDstIp(){
+	public String getDstIp(){
 		return dstIp;
 	}
 
