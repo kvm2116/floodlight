@@ -89,6 +89,7 @@ import org.projectfloodlight.openflow.types.OFGroup;
 import org.projectfloodlight.openflow.types.OFPort;
 import org.projectfloodlight.openflow.types.OFVlanVidMatch;
 import org.projectfloodlight.openflow.types.TableId;
+import org.projectfloodlight.openflow.types.TransportPort;
 import org.projectfloodlight.openflow.types.U64;
 import org.projectfloodlight.openflow.types.VlanVid;
 import org.python.google.common.collect.ImmutableList;
@@ -101,6 +102,8 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
 
     protected IRestApiService restApiService;
     protected static Map<IPTuple, HashMap<Integer, Integer>> groupAssignments;
+    private static final int NUMGROUPS = 2;			// THIS SHOULD BE SAME AS THE PYTHON APPLICATION
+    
     /*
      * Cookies are 64 bits:
      * Example: 0x0123456789ABCDEF
@@ -123,6 +126,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
      * or flowsets
      */
 
+    
     private static final short DECISION_BITS = 24;
     private static final short DECISION_SHIFT = 0;
     private static final long DECISION_MASK = ((1L << DECISION_BITS) - 1) << DECISION_SHIFT;
@@ -491,13 +495,27 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
                 dstAp.getNodeId(),
                 dstAp.getPortId());
 
-	//log.warn("VLAN from packet-in {}", pi.getMatch().get(MatchField.VLAN_VID));
-	Match m = createMatchFromPacket(sw, srcPort, 
-                pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
-                    pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
-	Match mExt = createMatchForExtensibility(sw, srcPort, 
-            pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
-                pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
+        int groupNumber = -1;
+        int outputPort = -1;
+        Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
+        if (eth.getEtherType() == EthType.IPv4) { /* shallow check for equality is okay for EthType */
+    		IPv4 ip = (IPv4) eth.getPayload();
+    		IPv4Address srcIp = ip.getSourceAddress();
+    		IPv4Address dstIp = ip.getDestinationAddress();
+    		if (ip.getProtocol().equals(IpProtocol.TCP)) { 	/* add port numbers */
+    			TCP tcp = (TCP) ip.getPayload();
+    			groupNumber = (tcp.getSourcePort().getPort() ^ tcp.getDestinationPort().getPort()) % NUMGROUPS;
+    		}
+    		outputPort = getOutputPort(srcIp, dstIp, groupNumber);
+        }
+        
+		//log.warn("VLAN from packet-in {}", pi.getMatch().get(MatchField.VLAN_VID));
+		Match m = createMatchFromPacket(sw, srcPort, 
+	                pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
+	                    pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
+		Match mExt = createMatchForExtensibility(sw, srcPort, 
+	            pi.getMatch().get(MatchField.VLAN_VID) == null ? null : 
+	                pi.getMatch().get(MatchField.VLAN_VID).getVlanVid(), cntx);
 	
         if (path != null) {
             if (log.isDebugEnabled()) {
@@ -508,8 +526,8 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
                                 dstAp.getPortId()});
                 log.debug("Creating flow rules on the route, match rule: {}", m);
             }
-
-            pushRoute(path, m, mExt, pi, sw.getId(), cookie, 
+     
+            pushRoute(path, m, mExt, outputPort, pi, sw.getId(), cookie, 
                     cntx, requestFlowRemovedNotifn,
                     OFFlowModCommand.ADD);	
         } else {
@@ -522,7 +540,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
             npts.add(new NodePortTuple(dstDevice.getAttachmentPoints()[0].getNodeId(),
                     dstDevice.getAttachmentPoints()[0].getPortId()));
             path.setPath(npts);
-            pushRoute(path, m, mExt, pi, sw.getId(), cookie,
+            pushRoute(path, m, mExt, outputPort, pi, sw.getId(), cookie,
                     cntx, requestFlowRemovedNotifn,
                     OFFlowModCommand.ADD);
         }
@@ -538,6 +556,26 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     }
     	
     /**
+     * Returns the output port if a group entry exists for the src and dst ip pair
+     * @param srcIp
+     * @param dstIp
+     * @param groupNumber the group the flow belongs to
+     * @return
+     */
+    protected int getOutputPort(IPv4Address srcIp, IPv4Address dstIp, int groupNumber){
+    	String srcIP = srcIp.toString();
+    	String dstIP = dstIp.toString();
+    	log.warn(srcIp.toString());
+		log.warn(dstIp.toString());
+    	IPTuple ipTup = new IPTuple(srcIP, dstIP);
+    	if(Forwarding.groupAssignments.containsKey(ipTup)){
+    		HashMap<Integer, Integer> groupMapping = Forwarding.groupAssignments.get(ipTup);
+    		return groupMapping.get(groupNumber);
+    	}
+    	return -1;
+    }
+    
+    /**
     * Create a Match for HP's extensibility table
     * The match criteria is IP addresses and TCP ports
     * @param sw
@@ -547,9 +585,9 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     * @return
     */
     protected Match createMatchForExtensibility(IOFSwitch sw, OFPort inPort, VlanVid v, FloodlightContext cntx) {
-    	for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
-		    log.warn(entry.getKey()+" : "+entry.getValue());
-		}
+//    	for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
+//		    log.warn(entry.getKey()+" : "+entry.getValue());
+//		}
     	Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
     	VlanVid vlan = v == null ? VlanVid.ofVlan(eth.getVlanID()) :  v;
     	Match.Builder mb = sw.getOFFactory().buildMatch();
@@ -567,7 +605,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     		mb.setExact(MatchField.IPV4_DST, dstIp);
     		if (ip.getProtocol().equals(IpProtocol.TCP)) { 	/* add port numbers */
     			TCP tcp = (TCP) ip.getPayload();
-			mb.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
+    			mb.setExact(MatchField.IP_PROTO, IpProtocol.TCP);
     			mb.setExact(MatchField.TCP_SRC, tcp.getSourcePort());
     			mb.setExact(MatchField.TCP_DST, tcp.getDestinationPort());
     		}

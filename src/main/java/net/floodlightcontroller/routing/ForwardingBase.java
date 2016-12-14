@@ -172,6 +172,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
      * Push routes from back to front
      * @param route Route to push
      * @param match OpenFlow fields to match on
+     * @param outputPort 
      * @param srcSwPort Source switch port for the first hop
      * @param dstSwPort Destination switch port for final hop
      * @param cookie The cookie to set in each flow_mod
@@ -182,7 +183,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
      *        OFFlowMod.OFPFC_MODIFY etc.
      * @return true if a packet out was sent on the first-hop switch of this route
      */
-    public boolean pushRoute(Path route, Match match, Match matchExt, OFPacketIn pi,
+    public boolean pushRoute(Path route, Match match, Match matchExt, int outputPort, OFPacketIn pi,
             DatapathId pinSwitch, U64 cookie, FloodlightContext cntx,
             boolean requestFlowRemovedNotification, OFFlowModCommand flowModCommand) {
 
@@ -243,6 +244,13 @@ public abstract class ForwardingBase implements IOFMessageListener {
             if (FLOWMOD_DEFAULT_MATCH_IN_PORT) {
                 mb.setExact(MatchField.IN_PORT, inPort);
             }
+            
+            // Checking if an output port is specified for this flow rule
+            if(outputPort > 0){
+            	outPort = OFPort.ofInt(outputPort);
+            	log.warn("Using output port from the Group Assignments = " + outPort.toString());
+            }
+            
             aob.setPort(outPort);
             aob.setMaxLen(Integer.MAX_VALUE);
             actions.add(aob.build());
