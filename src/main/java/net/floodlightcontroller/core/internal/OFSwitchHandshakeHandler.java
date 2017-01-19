@@ -67,6 +67,8 @@ import org.projectfloodlight.openflow.protocol.OFTableFeaturesStatsRequest;
 import org.projectfloodlight.openflow.protocol.OFType;
 import org.projectfloodlight.openflow.protocol.OFVersion;
 import org.projectfloodlight.openflow.protocol.action.OFAction;
+import org.projectfloodlight.openflow.protocol.action.OFActionGroup;
+import org.projectfloodlight.openflow.protocol.action.OFActionOutput;
 import org.projectfloodlight.openflow.protocol.actionid.OFActionId;
 import org.projectfloodlight.openflow.protocol.errormsg.OFBadRequestErrorMsg;
 import org.projectfloodlight.openflow.protocol.errormsg.OFFlowModFailedErrorMsg;
@@ -482,44 +484,69 @@ public class OFSwitchHandshakeHandler implements IOFConnectionListener {
 					.setOutPort(OFPort.CONTROLLER)
 					.build();
 			this.sw.write(deleteFlow);
-
-			ArrayList<OFAction> actions = new ArrayList<OFAction>(1);
-			actions.add(factory.actions().output(OFPort.CONTROLLER, 0xffFFffFF));
+		
+//			ArrayList<OFAction> actions1 = new ArrayList<OFAction>(1);
+			ArrayList<OFAction> actions100 = new ArrayList<OFAction>(1);
+			ArrayList<OFAction> actions200 = new ArrayList<OFAction>(1);
+			actions100.add(factory.actions().output(OFPort.CONTROLLER, 0xffFFffFF));
+			actions200.add(factory.actions().group(OFGroup.of(1)));
+			
+//			actions.add(factory.actions().output(OFPort.CONTROLLER, 0xffFFffFF));
+//			OFActionOutput.Builder aob = sw.getOFFactory().actions().buildOutput();
+//		
+//			aob.setPort(OFPort.ofInt());
+//            aob.setMaxLen(Integer.MAX_VALUE);
+//            actions.add(aob.build());
+			//actions.add(factory.actions().output(OFPort.ofInt(29), 0xffFFffFF));
+			
 			ArrayList<OFMessage> flows = new ArrayList<OFMessage>();
 
 			/* If we received a table features reply, iterate over the tables */
 			if (!this.sw.getTables().isEmpty()) {
+				log.warn("HERE");
 				short missCount = 0;
-				for (TableId tid : this.sw.getTables()) {
-					/* Only add the flow if the table exists and if it supports sending to the controller */
-					TableFeatures tf = this.sw.getTableFeatures(tid);
-					if (tf != null && (missCount < this.sw.getMaxTableForTableMissFlow().getValue())) {
-						for (OFActionId aid : tf.getPropApplyActionsMiss().getActionIds()) {
-							if (aid.getType() == OFActionType.OUTPUT) { /* The assumption here is that OUTPUT includes the special port CONTROLLER... */
-								OFFlowAdd defaultFlow = this.factory.buildFlowAdd()
-										.setTableId(tid)
-										.setPriority(0)
-										.setInstructions(Collections.singletonList((OFInstruction) this.factory.instructions().buildApplyActions().setActions(actions).build()))
-										.build();
-								flows.add(defaultFlow);
-								break; /* Stop searching for actions and go to the next table in the list */
-							}
-						}
-					}
-					missCount++;
-				}
+//				for (TableId tid : this.sw.getTables()) {
+//					/* Only add the flow if the table exists and if it supports sending to the controller */
+//					TableFeatures tf = this.sw.getTableFeatures(tid);
+//					if (tf != null && (missCount < this.sw.getMaxTableForTableMissFlow().getValue())) {
+//						for (OFActionId aid : tf.getPropApplyActionsMiss().getActionIds()) {
+//							if (aid.getType() == OFActionType.OUTPUT) { /* The assumption here is that OUTPUT includes the special port CONTROLLER... */
+//								OFFlowAdd defaultFlow = this.factory.buildFlowAdd()
+//										.setTableId(tid)
+//										.setPriority(0)
+//										.setInstructions(Collections.singletonList((OFInstruction) this.factory.instructions().buildApplyActions().setActions(actions).build()))
+//										.build();
+//								flows.add(defaultFlow);
+//								break; /* Stop searching for actions and go to the next table in the list */
+//							}
+//						}
+//					}
+//					missCount++;
+//				}
+//				OFFlowAdd defaultFlow = this.factory.buildFlowAdd()
+//						.setTableId(TableId.of(100))
+//						.setPriority(0)
+//						.setInstructions(Collections.singletonList((OFInstruction) this.factory.instructions().buildApplyActions().setActions(actions100).build()))
+//						.build();
+//				flows.add(defaultFlow);
+//				OFFlowAdd defaultFlow200 = this.factory.buildFlowAdd()
+//						.setTableId(TableId.of(200))
+//						.setPriority(0)
+//						.setInstructions(Collections.singletonList((OFInstruction) this.factory.instructions().buildWriteActions().setActions(actions200).build()))
+//						.build();
+//				flows.add(defaultFlow200);
 			} else { /* Otherwise, use the number of tables starting at TableId=0 as indicated in the features reply */
-				short missCount = 0;
-				for (short tid = 0; tid < this.sw.getNumTables(); tid++, missCount++) {
-					if (missCount < this.sw.getMaxTableForTableMissFlow().getValue()) { /* Only insert if we want it */
-						OFFlowAdd defaultFlow = this.factory.buildFlowAdd()
-								.setTableId(TableId.of(tid))
-								.setPriority(0)
-								.setActions(actions)
-								.build();
-						flows.add(defaultFlow);
-					}
-				}
+//				short missCount = 0;
+//				for (short tid = 0; tid < this.sw.getNumTables(); tid++, missCount++) {
+//					if (missCount < this.sw.getMaxTableForTableMissFlow().getValue()) { /* Only insert if we want it */
+//						OFFlowAdd defaultFlow = this.factory.buildFlowAdd()
+//								.setTableId(TableId.of(tid))
+//								.setPriority(0)
+//								.setActions(actions)
+//								.build();
+//						flows.add(defaultFlow);
+//					}
+//				}
 			}
 			this.sw.write(flows);
 		}

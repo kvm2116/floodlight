@@ -101,7 +101,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     protected static final Logger log = LoggerFactory.getLogger(Forwarding.class);
 
     protected IRestApiService restApiService;
-    protected static Map<IPTuple, HashMap<Integer, Integer>> groupAssignments;
+    protected static Map<String, HashMap<Integer, Integer>> groupAssignments;
     private static final int NUMGROUPS = 2;			// THIS SHOULD BE SAME AS THE PYTHON APPLICATION
     
     /*
@@ -418,6 +418,17 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
         log.debug("OFMessage dampened: {}", dampened);
     }
 
+    public long ipToLong(String ipAddress) {
+    	String[] ipAddressInArray = ipAddress.split("\\.");
+    	long result = 0;
+    	for (int i = 0; i < ipAddressInArray.length; i++) {
+    		int power = 3 - i;
+    		int ip = Integer.parseInt(ipAddressInArray[i]);
+    		result += ip * Math.pow(256, power);
+    	}
+    	return result;
+    }
+    
     protected void doForwardFlow(IOFSwitch sw, OFPacketIn pi, IRoutingDecision decision, FloodlightContext cntx, boolean requestFlowRemovedNotifn) {
         OFPort srcPort = OFMessageUtils.getInPort(pi);
         DatapathId srcSw = sw.getId();
@@ -495,7 +506,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
                 dstAp.getNodeId(),
                 dstAp.getPortId());
 
-        int groupNumber = -1;
+        long groupNumber = -1;
         int outputPort = -1;
         Ethernet eth = IFloodlightProviderService.bcStore.get(cntx, IFloodlightProviderService.CONTEXT_PI_PAYLOAD);
         if (eth.getEtherType() == EthType.IPv4) { /* shallow check for equality is okay for EthType */
@@ -504,9 +515,10 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
     		IPv4Address dstIp = ip.getDestinationAddress();
     		if (ip.getProtocol().equals(IpProtocol.TCP)) { 	/* add port numbers */
     			TCP tcp = (TCP) ip.getPayload();
-    			groupNumber = (tcp.getSourcePort().getPort() ^ tcp.getDestinationPort().getPort()) % NUMGROUPS;
+    			groupNumber = ipToLong(srcIp.toString()) ^ ipToLong(dstIp.toString());
+    			groupNumber = (groupNumber ^ tcp.getSourcePort().getPort() ^ tcp.getDestinationPort().getPort()) % NUMGROUPS;
     		}
-    		outputPort = getOutputPort(srcIp, dstIp, groupNumber);
+    		outputPort = getOutputPort(srcSw.toString(), (int) groupNumber);
         }
         
 		//log.warn("VLAN from packet-in {}", pi.getMatch().get(MatchField.VLAN_VID));
@@ -562,16 +574,13 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
      * @param groupNumber the group the flow belongs to
      * @return
      */
-    protected int getOutputPort(IPv4Address srcIp, IPv4Address dstIp, int groupNumber){
-    	String srcIP = srcIp.toString();
-    	String dstIP = dstIp.toString();
-    	IPTuple ipTup = new IPTuple(srcIP, dstIP);
+    protected int getOutputPort(String dpid, int groupNumber){
 //    	for (Entry<IPTuple, HashMap<Integer, Integer>> entry : Forwarding.groupAssignments.entrySet()) {
 //		    log.warn("MAP" + entry.getKey()+" : "+entry.getValue());
 //		}
 //    	log.warn(ipTup.toString());
-    	if(Forwarding.groupAssignments.containsKey(ipTup)){
-    		HashMap<Integer, Integer> groupMapping = Forwarding.groupAssignments.get(ipTup);
+    	if(Forwarding.groupAssignments.containsKey(dpid)){
+    		HashMap<Integer, Integer> groupMapping = Forwarding.groupAssignments.get(dpid);
     		return groupMapping.get(groupNumber);
     	}
     	return -1;
@@ -830,7 +839,7 @@ public class Forwarding extends ForwardingBase implements IFloodlightModule, IOF
         this.restApiService = context.getServiceImpl(IRestApiService.class);
         
         flowSetIdRegistry = FlowSetIdRegistry.getInstance();
-        groupAssignments = new HashMap<IPTuple, HashMap<Integer, Integer>>();
+        groupAssignments = new HashMap<String, HashMap<Integer, Integer>>();
         
         Map<String, String> configParameters = context.getConfigParams(this);
         String tmp = configParameters.get("hard-timeout");
