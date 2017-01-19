@@ -273,6 +273,7 @@ public abstract class ForwardingBase implements IOFMessageListener {
             .setHardTimeout(FLOWMOD_DEFAULT_HARD_TIMEOUT)
             .setBufferId(OFBufferId.NO_BUFFER)
             .setCookie(cookie)
+            .setHardTimeout(10)
             .setOutPort(outPort)
             .setPriority(FLOWMOD_DEFAULT_PRIORITY);
             
